@@ -17,6 +17,7 @@ export type Project = {
 	tech?: string[]; // Tech stack tags
 	repoUrl?: string; // GitHub repo link
 	liveUrl?: string; // Live demo link
+	caseStudyUrl?: string; // Deeper in-house write-up (engineering report, case study, etc.)
 };
 
 export const projects: Project[] = [
@@ -183,5 +184,6 @@ rejoin it to the cluster afterward.`,
 			'Docker'
 		],
 		repoUrl: 'https://github.com/josephvelasquez48/homelab'
+		// caseStudyUrl: '/projects/homelab/report' — re-add when the report is ready to go public
 	}
 ];

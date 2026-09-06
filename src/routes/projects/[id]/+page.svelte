@@ -51,8 +51,16 @@
       </div>
     {/if}
 
-    {#if project.repoUrl || project.liveUrl}
+    {#if project.repoUrl || project.liveUrl || project.caseStudyUrl}
       <div class="flex flex-wrap gap-3">
+        {#if project.caseStudyUrl}
+          <a
+            href={project.caseStudyUrl}
+            class="inline-flex items-center gap-2 rounded-lg bg-emerald-400/10 px-5 py-2.5 text-sm font-medium text-emerald-400 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-400/20"
+          >
+            Read the Engineering Report &rarr;
+          </a>
+        {/if}
         {#if project.repoUrl}
           <a
             href={project.repoUrl}
