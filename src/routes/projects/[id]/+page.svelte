@@ -95,7 +95,8 @@
       <img
         src={project.imageUrl}
         alt={project.title}
-        class="w-full h-[420px] object-cover object-[30%_30%] rounded-xl ring-1 ring-white/10 shadow-lg"
+        class="w-full h-[420px] object-cover rounded-xl ring-1 ring-white/10 shadow-lg"
+        style="object-position: {project.imagePosition ?? '30% 30%'}"
       />
     </button>
   </div>
