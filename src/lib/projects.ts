@@ -9,6 +9,7 @@ export type Project = {
 	title: string;
 	description: string; // Short description (used in cards)
 	imageUrl: string; // Cover image (used in cards)
+	imagePosition?: string; // CSS object-position for the cover crop (default: 30% 30%)
 	images: ProjectImage[]; // Gallery images (used on project page)
 	overview?: string; // Detailed overview / story
 	features?: string[]; // Current features
@@ -124,47 +125,75 @@ base grounds every answer in real office info rather than letting the model impr
 		id: 'homelab',
 		title: 'Homelab Cloud + AI Platform',
 		description:
-			'A self-hosted cloud/AI platform across a Raspberry Pi 5 and a GPU desktop: Kubernetes, GitOps, local LLM inference, and full-cycle SRE practice.',
+			'A self-hosted cloud/AI platform across a Raspberry Pi 5 and an M1 MacBook: Kubernetes, GitOps, local LLM inference on a GPU host, and full-cycle SRE practice.',
 		imageUrl: '/homelab/dashboard.png',
+		// The dashboard's heading and metrics cards sit top-left; anchoring there keeps
+		// them visible on narrow screens, where the cover crops horizontally instead.
+		imagePosition: 'left top',
 		images: [
 			{
 				src: '/homelab/dashboard.png',
-				alt: 'Homelab dashboard — gaming-mode cordon/drain log, plus live Pi and desktop node metrics cards'
+				alt: 'Homelab dashboard — live Pi metrics, alert state, backup health, pods, Argo CD apps, and node readiness'
 			},
 			{
 				src: '/homelab/architecture.png',
-				alt: 'Two-node K3s architecture: Pi control-plane, desktop worker, GitOps flow'
+				alt: 'Two-node K3s architecture: Pi control-plane, M1 worker, GPU inference host, and the GitOps flow'
+			},
+			{
+				src: '/homelab/argocd-applications.png',
+				alt: 'Argo CD app-of-apps — seven applications, all Synced and Healthy'
+			},
+			{
+				src: '/homelab/prometheus-targets.png',
+				alt: 'Prometheus target health — kubernetes-pods, node-pi, and prometheus scrape pools all up'
+			},
+			{
+				src: '/homelab/prometheus-alert-rules.png',
+				alt: 'Prometheus alert rules for backup staleness, missing metrics, and agent failure'
+			},
+			{
+				src: '/homelab/adguard-dashboard.png',
+				alt: 'AdGuard Home — 24-hour DNS query and filtering statistics'
 			}
 		],
-		overview: `A production-style cloud/AI platform built across a Raspberry Pi 5 (control-plane, DNS, data
-tier) and a GPU desktop (K3s worker, local LLM inference), taken through an 18-step roadmap end to end:
-Linux administration, Docker to Kubernetes migration, FastAPI + Postgres/pgvector + Redis, RAG over a
-local Ollama LLM, Prometheus/Grafana observability, CI/CD with GitOps via Argo CD, Ansible and Terraform,
+		overview: `A production-style cloud/AI platform built across a Raspberry Pi 5 (K3s control-plane, DNS,
+data tier) and an M1 MacBook (K3s worker, Ubuntu in a bridged VM), with a GPU desktop on the LAN serving
+local LLM inference from outside the cluster. Taken through an 18-step roadmap end to end: Linux
+administration, Docker to Kubernetes migration, FastAPI + Postgres/pgvector + Redis, RAG over a local
+Ollama LLM, Prometheus/Grafana observability, CI/CD with GitOps via Argo CD, Ansible and Terraform,
 security hardening, load and failure testing. Every phase is documented with what was actually built, real
 bugs found while building it, and the verification evidence for each — not just "it worked."
 
 The engineering value here isn't the roadmap itself, it's what surfaced while running it for real: a
 security gap where firewall rules never actually applied to Kubernetes traffic due to iptables chain
-ordering; a GitOps credential-rotation mistake that cascaded into an unrelated Windows networking bug on
-the WSL2-based worker node; a retry/timeout gap that let a dead AI backend hang requests for minutes
-instead of failing fast, found by deliberately breaking things and root-caused from the actual code, then
-fixed and re-verified against the live, deployed fix. A small in-cluster dashboard (FastAPI, pinned to the
-Pi so it stays up even when the desktop is pulled out of the cluster) shows live status and can trigger a
-"gaming mode" - cordon and drain the desktop node over SSH so a game gets the machine's full CPU/GPU, then
-rejoin it to the cluster afterward.`,
+ordering; a retry/timeout gap that let a dead AI backend hang requests for minutes instead of failing
+fast, found by deliberately breaking things and root-caused from the actual code, then fixed and
+re-verified against the live, deployed fix; a DNS resolver loop between AdGuard and CoreDNS that was
+failing one LAN query in five, traced from "some apps are slow on my phone" to a reverse-lookup cycle and
+a Bonjour flood. The second node itself was eventually migrated off WSL2 onto a bridged Linux VM, which
+retired an entire class of Windows-networking failures rather than working around another instance of one.
+
+A small in-cluster dashboard (FastAPI, pinned to the Pi) shows live node, pod, Argo CD, alert, and backup
+state, and can free the GPU on demand by evicting the resident Ollama model with a single API call.
+Encrypted backups are collected to a separate machine and proven by a restore rehearsal that boots K3s
+from the snapshot in a throwaway VM, with Prometheus alerting by email when a backup goes stale or its
+agent fails.`,
 		features: [
-			'Two-node K3s cluster (Pi control-plane + WSL2 desktop worker) with GitOps via Argo CD - selfHeal drift correction confirmed in ~11s',
+			'Two-node K3s cluster (Pi control-plane + M1 MacBook worker) with GitOps via Argo CD - selfHeal drift correction confirmed in ~11s',
 			'FastAPI backend with rate limiting, retries, structured logging, and Prometheus metrics, backed by Postgres/pgvector + Redis',
 			'RAG pipeline over a fully local Ollama LLM - no data leaves the network',
-			'CI/CD: GitHub Actions builds multi-arch images, pushes to GHCR, and commits the new tag - Argo CD does the actual deploying',
+			'CI/CD: GitHub Actions builds and pushes images to GHCR, then commits the new tag - Argo CD does the actual deploying',
 			'Secrets encrypted at rest with SOPS + age, applied out-of-band from the GitOps sync path',
-			'Load tested with k6 (0% errors at ~480 req/s sustained) and failure tested with real fault injection (pod kills, dependency outages, a stopped AI backend) - findings cross-checked against Prometheus/Grafana, not just client-side output',
-			'A cluster status dashboard with a live gaming-mode toggle that cordons/drains the desktop node over SSH and hands it back afterward'
+			'HTTPS on all five service hostnames through Traefik, using a local CA with a .home name constraint',
+			'Encrypted off-host backups with a scripted restore rehearsal that boots K3s from the snapshot in a throwaway VM, plus Prometheus/Alertmanager rules that email on stale or failed backups',
+			'Load tested with k6 (0% errors at ~476 req/s sustained) and failure tested with real fault injection (pod kills, dependency outages, a stopped AI backend) - findings cross-checked against Prometheus/Grafana, not just client-side output',
+			'A cluster status dashboard showing live Pi metrics, nodes, pods, Argo CD apps, alerts, and backup health, with a one-call GPU release for the inference host'
 		],
 		roadmap: [
-			'Streaming (SSE/websocket) output for the gaming-mode toggle instead of a blocking request',
-			'A second Prometheus scrape target for the desktop’s own GPU/host metrics',
-			'Multi-tenant API keys, to make the rate limiter’s per-key design actually load-testable at scale'
+			'A native Windows exporter for the GPU host, which stopped being a Prometheus target when it left the cluster',
+			'Unattended boot for the worker node - FileVault holds the VM (and the backup agent) until someone unlocks the Mac',
+			'A reviewed retention policy so backup snapshots are pruned instead of accumulating',
+			'Certificate renewal automation - the current server certificate is renewed by hand, with no expiry alert'
 		],
 		tech: [
 			'Kubernetes (K3s)',
@@ -176,10 +205,13 @@ rejoin it to the cluster afterward.`,
 			'Ollama',
 			'Prometheus',
 			'Grafana',
+			'Alertmanager',
+			'Traefik',
 			'GitHub Actions',
 			'Ansible',
 			'Terraform',
 			'SOPS',
+			'Restic',
 			'k6',
 			'Docker'
 		],
