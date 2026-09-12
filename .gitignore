@@ -18,6 +18,7 @@ node_modules/.vite/
 .DS_Store
 .vscode/
 .idea/
+.claude/
 
 # Logs
 npm-debug.log*
