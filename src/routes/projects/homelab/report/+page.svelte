@@ -19,6 +19,7 @@
         'PostgreSQL + pgvector — HNSW cosine similarity search',
         'Redis — rate-limit state and the async job queue',
         'Ollama on an RTX 3070 Ti — local, no data leaves the network',
+        'Chat assistant — streaming, cites a 127GB offline Wikipedia',
         'Restic — encrypted off-host backups, restore-rehearsed'
       ]
     },
@@ -166,6 +167,7 @@
         ['PostgreSQL + pgvector', 'HNSW cosine similarity search'],
         ['Redis', 'Rate-limit state, async job queue'],
         ['Ollama', 'RTX 3070 Ti, LAN host outside the cluster'],
+        ['Kiwix + zimsearch', 'Offline Wikipedia search for the chat assistant'],
         ['Restic', 'Encrypted backups, automated restore rehearsal']
       ]
     },
@@ -241,7 +243,8 @@
         two-node K3s cluster with GitOps deployments through Argo CD and GitHub Actions. The main
         application is a FastAPI backend using PostgreSQL with pgvector, Redis, and local LLM
         inference through Ollama on an NVIDIA GPU. I built a RAG pipeline on top of that and added
-        authentication, rate limiting, caching, and async processing.
+        authentication, rate limiting, caching, and async processing, then a streaming chat
+        assistant that can search and cite a 127GB offline copy of Wikipedia.
       </p>
       <p>
         I also built out the operational side: CoreDNS and AdGuard Home for DNS and ad-blocking,
