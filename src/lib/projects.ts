@@ -125,7 +125,7 @@ base grounds every answer in real office info rather than letting the model impr
 		id: 'homelab',
 		title: 'Homelab Cloud + AI Platform',
 		description:
-			'A self-hosted cloud/AI platform across a Raspberry Pi 5 and an M1 MacBook: Kubernetes, GitOps, local LLM inference on a GPU host, and full-cycle SRE practice.',
+			'A self-hosted cloud/AI platform across a Raspberry Pi 5 and an M1 MacBook: Kubernetes, GitOps, local LLM inference on a GPU host, a chat assistant grounded in offline Wikipedia, and full-cycle SRE practice.',
 		imageUrl: '/homelab/dashboard.png',
 		// The dashboard's heading and metrics cards sit top-left; anchoring there keeps
 		// them visible on narrow screens, where the cover crops horizontally instead.
@@ -175,6 +175,10 @@ retired an entire class of Windows-networking failures rather than working aroun
 
 A small in-cluster dashboard (FastAPI, pinned to the Pi) shows live node, pod, Argo CD, alert, and backup
 state, and can free the GPU on demand by evicting the resident Ollama model with a single API call.
+A streaming chat assistant at chat.home can search a 127GB offline Wikipedia archive and cite what it
+finds. Embedding millions of articles on one 8GB card was never realistic, so retrieval uses the full-text
+index the archive already ships with, and query handling is scored against 40 labelled questions before
+changes merge: obscure topics went from 8 of 15 to 15 of 15 finding the right article first.
 Encrypted backups are collected to a separate machine and proven by a restore rehearsal that boots K3s
 from the snapshot in a throwaway VM, with Prometheus alerting by email when a backup goes stale or its
 agent fails.`,
@@ -182,9 +186,10 @@ agent fails.`,
 			'Two-node K3s cluster (Pi control-plane + M1 MacBook worker) with GitOps via Argo CD - selfHeal drift correction confirmed in ~11s',
 			'FastAPI backend with rate limiting, retries, structured logging, and Prometheus metrics, backed by Postgres/pgvector + Redis',
 			'RAG pipeline over a fully local Ollama LLM - no data leaves the network',
+			'Streaming chat assistant with saved conversations and a model picker, grounded in a 127GB offline Wikipedia archive through its built-in full-text index',
 			'CI/CD: GitHub Actions builds and pushes images to GHCR, then commits the new tag - Argo CD does the actual deploying',
 			'Secrets encrypted at rest with SOPS + age, applied out-of-band from the GitOps sync path',
-			'HTTPS on all five service hostnames through Traefik, using a local CA with a .home name constraint',
+			'HTTPS on every service hostname through Traefik, using a local CA with a .home name constraint',
 			'Encrypted off-host backups with a scripted restore rehearsal that boots K3s from the snapshot in a throwaway VM, plus Prometheus/Alertmanager rules that email on stale or failed backups',
 			'Load tested with k6 (0% errors at ~476 req/s sustained) and failure tested with real fault injection (pod kills, dependency outages, a stopped AI backend) - findings cross-checked against Prometheus/Grafana, not just client-side output',
 			'A cluster status dashboard showing live Pi metrics, nodes, pods, Argo CD apps, alerts, and backup health, with a one-call GPU release for the inference host'
@@ -203,6 +208,7 @@ agent fails.`,
 			'pgvector',
 			'Redis',
 			'Ollama',
+			'Kiwix',
 			'Prometheus',
 			'Grafana',
 			'Alertmanager',
