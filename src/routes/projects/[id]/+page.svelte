@@ -179,7 +179,7 @@
   >
     <button
       type="button"
-      class="absolute top-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-200 ring-1 ring-white/20 hover:bg-white/20 transition-colors"
+      class="absolute top-5 right-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-200 ring-1 ring-white/20 hover:bg-white/20 transition-colors"
       on:click={closeLightbox}
       aria-label="Close"
     >
@@ -189,10 +189,13 @@
     </button>
 
     <div on:click|stopPropagation role="presentation">
+      <!-- Sized against the viewport, not the wrapper: the wrapper has no height
+           of its own, so max-h-full never limited anything and tall images ran
+           past the bottom of the screen. 3rem is the overlay's p-6 on both sides. -->
       <img
         src={lightboxSrc}
         alt={lightboxAlt}
-        class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+        class="block w-auto h-auto max-w-[calc(100vw_-_3rem)] max-h-[calc(100dvh_-_3rem)] object-contain rounded-lg shadow-2xl"
       />
     </div>
   </div>
