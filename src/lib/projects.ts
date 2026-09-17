@@ -137,7 +137,7 @@ base grounds every answer in real office info rather than letting the model impr
 			},
 			{
 				src: '/homelab/architecture.png',
-				alt: 'Two-node K3s architecture: Pi control-plane, M1 worker, GPU inference host, and the GitOps flow'
+				alt: 'Homelab architecture: the Raspberry Pi runs host DNS and backups plus the K3s control plane, ingress, apps, data, monitoring and offline Wikipedia; a MacBook VM runs the second API replica and the nightly restic backup; a Windows GPU desktop serves Ollama; GitHub Actions and Argo CD deliver it'
 			},
 			{
 				src: '/homelab/argocd-applications.png',
