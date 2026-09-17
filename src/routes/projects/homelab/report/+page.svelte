@@ -305,11 +305,14 @@
       deliberately not a cluster member. That last split is the end state of the migration
       described below, not the original design.
     </p>
-    <img
-      src="/homelab/architecture.png"
-      alt="Two-node K3s architecture: Pi control-plane, M1 worker, GPU inference host, and the GitOps flow"
-      class="w-full rounded-xl ring-1 ring-white/10 shadow-lg"
-    />
+    <a href="/homelab/architecture.png" target="_blank" rel="noopener" class="block">
+      <img
+        src="/homelab/architecture.png"
+        alt="Homelab architecture: the Raspberry Pi runs host DNS and backups plus the K3s control plane, ingress, apps, data, monitoring and offline Wikipedia; a MacBook VM runs the second API replica and the nightly restic backup; a Windows GPU desktop serves Ollama; GitHub Actions and Argo CD deliver it"
+        class="w-full rounded-xl ring-1 ring-white/10 shadow-lg"
+      />
+    </a>
+    <p class="mt-2 text-sm text-gray-400">Select the diagram to open it full size.</p>
   </section>
 
   <!-- Engineering narratives -->
