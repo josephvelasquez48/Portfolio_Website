@@ -28,6 +28,9 @@ export type Project = {
 	images: ProjectImage[]; // Gallery images (used on project page)
 	overview?: string; // Detailed overview / story
 	features?: string[]; // Current features
+	featureGroups?: FeatureGroup[]; // Features in titled groups (shown instead of features)
+	stats?: ProjectStat[]; // Headline numbers, shown under the overview
+	highlights?: ProjectHighlight[]; // Problems found and fixed, one card each
 	roadmap?: string[]; // Planned features / roadmap
 	notes?: string[]; // Development notes / progression plan
 	tech?: string[]; // Tech stack tags
