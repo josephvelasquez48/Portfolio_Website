@@ -7,6 +7,13 @@
 
   const { project } = data;
 
+  // The overview is a template literal wrapped for the editor: blank lines
+  // separate paragraphs, single newlines are just wrapping.
+  const overviewParagraphs = (project.overview ?? '')
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s*\n\s*/g, ' ').trim())
+    .filter(Boolean);
+
   let lightboxSrc: string | null = null;
   let lightboxAlt = '';
 
@@ -105,12 +112,67 @@
   {#if project.overview}
     <section>
       <h2 class="text-2xl font-semibold text-gray-100 mb-4">Overview</h2>
-      <p class="leading-relaxed">{project.overview}</p>
+      <div class="max-w-3xl space-y-4 leading-relaxed">
+        {#each overviewParagraphs as paragraph}
+          <p>{paragraph}</p>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
+  <!-- Headline numbers -->
+  {#if project.stats && project.stats.length > 0}
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {#each project.stats as stat}
+        <div class="rounded-xl bg-white/[0.03] p-5 ring-1 ring-white/10">
+          <div class="text-2xl font-semibold text-emerald-400">{stat.value}</div>
+          <div class="mt-1 text-sm text-gray-400">{stat.label}</div>
+        </div>
+      {/each}
+    </section>
+  {/if}
+
+  <!-- Features, in groups -->
+  {#if project.featureGroups && project.featureGroups.length > 0}
+    <section>
+      <h2 class="text-2xl font-semibold text-gray-100 mb-6">What It Runs</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        {#each project.featureGroups as group}
+          <div class="rounded-xl bg-white/[0.03] p-6 ring-1 ring-white/10">
+            <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-emerald-400">
+              {group.title}
+            </h3>
+            <ul class="space-y-2 text-sm leading-relaxed">
+              {#each group.items as item}
+                <li class="flex gap-2">
+                  <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/60"></span>
+                  <span>{item}</span>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
+  <!-- Problems found and fixed -->
+  {#if project.highlights && project.highlights.length > 0}
+    <section>
+      <h2 class="text-2xl font-semibold text-gray-100 mb-6">Problems Found and Fixed</h2>
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {#each project.highlights as highlight}
+          <div class="rounded-xl bg-white/[0.03] p-5 ring-1 ring-white/10 border-l-2 border-emerald-400/60">
+            <h3 class="mb-2 font-semibold text-gray-100">{highlight.title}</h3>
+            <p class="text-sm leading-relaxed text-gray-400">{highlight.detail}</p>
+          </div>
+        {/each}
+      </div>
     </section>
   {/if}
 
   <!-- Current Features -->
-  {#if project.features && project.features.length > 0}
+  {#if !project.featureGroups?.length && project.features && project.features.length > 0}
     <section>
       <h2 class="text-2xl font-semibold text-gray-100 mb-4">Current Features</h2>
       <ul class="list-disc ml-5 space-y-2">

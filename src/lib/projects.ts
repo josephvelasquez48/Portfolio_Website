@@ -4,6 +4,21 @@ export type ProjectImage = {
 	alt?: string;
 };
 
+export type ProjectStat = {
+	value: string;
+	label: string;
+};
+
+export type FeatureGroup = {
+	title: string;
+	items: string[];
+};
+
+export type ProjectHighlight = {
+	title: string;
+	detail: string;
+};
+
 export type Project = {
 	id: string;
 	title: string;
@@ -13,6 +28,9 @@ export type Project = {
 	images: ProjectImage[]; // Gallery images (used on project page)
 	overview?: string; // Detailed overview / story
 	features?: string[]; // Current features
+	featureGroups?: FeatureGroup[]; // Features in titled groups (shown instead of features)
+	stats?: ProjectStat[]; // Headline numbers, shown under the overview
+	highlights?: ProjectHighlight[]; // Problems found and fixed, one card each
 	roadmap?: string[]; // Planned features / roadmap
 	notes?: string[]; // Development notes / progression plan
 	tech?: string[]; // Tech stack tags
@@ -156,64 +174,89 @@ base grounds every answer in real office info rather than letting the model impr
 				alt: 'AdGuard Home — 24-hour DNS query and filtering statistics'
 			}
 		],
-		overview: `A production-style cloud/AI platform built across a Raspberry Pi 5 (K3s control-plane, DNS,
-data tier) and an M1 MacBook (K3s worker, Ubuntu in a bridged VM), with a GPU desktop on the LAN serving
-local LLM inference from outside the cluster. Taken through an 18-step roadmap end to end: Linux
-administration, Docker to Kubernetes migration, FastAPI + Postgres/pgvector + Redis, RAG over a local
-Ollama LLM, Prometheus/Grafana observability, CI/CD with GitOps via Argo CD, Ansible and Terraform,
-security hardening, load and failure testing. Every phase is documented with what was actually built, real
-bugs found while building it, and the verification evidence for each — not just "it worked."
+		overview: `A production-style cloud/AI platform on a Raspberry Pi 5 (K3s control plane, DNS, data tier) and an
+M1 MacBook (K3s worker in a bridged Ubuntu VM), with a GPU desktop on the LAN serving local LLM inference.
 
-The engineering value here isn't the roadmap itself, it's what surfaced while running it for real: a
-security gap where firewall rules never actually applied to Kubernetes traffic due to iptables chain
-ordering; a retry/timeout gap that let a dead AI backend hang requests for minutes instead of failing
-fast, found by deliberately breaking things and root-caused from the actual code, then fixed and
-re-verified against the live, deployed fix; a DNS resolver loop between AdGuard and CoreDNS that was
-failing one LAN query in five, traced from "some apps are slow on my phone" to a reverse-lookup cycle and
-a Bonjour flood. The second node itself was eventually migrated off WSL2 onto a bridged Linux VM, which
-retired an entire class of Windows-networking failures rather than working around another instance of one.
-
-The Pi's touchscreen runs a live ops display: an architecture map whose dots move at each service's
-real request rate, and a coral-reef "aquarium" with one fish per pod - size is memory, speed is CPU, and a pod
-near its memory limit puffs up into a pufferfish before it gets OOM-killed. Every box and fish opens a debug
-page with that service's connections, pods, events and logs. Watching it surfaced its own bug: AdGuard's
-rolling 24-hour totals were read as counter resets, so the DNS rate spiked to ~14,000 queries a minute every
-hour when the real rate was ~65; the exporter now keeps true counters.
-
-Running it day to day turned up more networking lessons. Cross-node pod traffic died after every move of the
-worker because its WireGuard tunnel's one long-lived UDP flow got stuck in the router's flow cache, so Flannel
-now routes pod traffic directly (host-gw). CoreDNS runs one replica per node, so a worker outage can't take
-cluster DNS away from the Pi, and AdGuard queries its upstreams in parallel after logs showed ~7,800 lookups
-stalling 2-10s on a slow upstream over 27 days.
-
-Beyond the platform, it hosts real apps. Mustard Cam streams a webcam to invited viewers over WebRTC: the
-FastAPI app is the gate, not the pipe - it handles passkey (WebAuthn) sign-in and the WebRTC handshake, then
-the video flows straight from the camera host. A phone bridge turns the Pi into a Bluetooth hands-free unit
-for an iPhone, so calls can be answered from the PC or the Pi's touchscreen, and has grown into a small app
-for sending photos and files between the phone and the PC, reachable from anywhere over Tailscale.
-
-A streaming chat assistant at chat.home can search a 127GB offline Wikipedia archive and cite what it
-finds. Embedding millions of articles on one 8GB card was never realistic, so retrieval uses the full-text
-index the archive already ships with, and query handling is scored against 40 labelled questions before
-changes merge: obscure topics went from 8 of 15 to 15 of 15 finding the right article first.
-Encrypted backups are collected to a separate machine and proven by a restore rehearsal that boots K3s
-from the snapshot in a throwaway VM, with Prometheus alerting by email when a backup goes stale or its
-agent fails.`,
-		features: [
-			'Two-node K3s cluster (Pi control-plane + M1 MacBook worker) with GitOps via Argo CD - selfHeal drift correction confirmed in ~11s',
-			'FastAPI backend with rate limiting, retries, structured logging, and Prometheus metrics, backed by Postgres/pgvector + Redis',
-			'RAG pipeline over a fully local Ollama LLM - no data leaves the network',
-			'Streaming chat assistant with saved conversations and a model picker, grounded in a 127GB offline Wikipedia archive through its built-in full-text index',
-			'CI/CD: GitHub Actions builds and pushes images to GHCR, then commits the new tag - Argo CD does the actual deploying',
-			'Secrets encrypted at rest with SOPS + age, applied out-of-band from the GitOps sync path',
-			'HTTPS on every service hostname through Traefik, using a local CA with a .home name constraint',
-			'Encrypted off-host backups with a scripted restore rehearsal that boots K3s from the snapshot in a throwaway VM, plus Prometheus/Alertmanager rules that email on stale or failed backups',
-			'Load tested with k6 (0% errors at ~476 req/s sustained) and failure tested with real fault injection (pod kills, dependency outages, a stopped AI backend) - findings cross-checked against Prometheus/Grafana, not just client-side output',
-			'A live touchscreen ops display on the Pi: an architecture map animated by real Prometheus request rates, a pod aquarium sized by live memory and CPU, and a debug page behind every service',
-			'Mustard Cam: a WebRTC webcam viewer with invite-only passkey (WebAuthn) accounts, hashed session tokens, per-address sign-in throttling, and a strict Content-Security-Policy, shared by link through Tailscale Funnel',
-			'iPhone calling bridge: the Pi as a Bluetooth hands-free unit (PipeWire, D-Bus, RNNoise noise filtering), answered from the PC or the touchscreen, plus photo and file transfer and 6-digit-code device sign-in over Tailscale',
-			'A self-hosted RustDesk server on the Pi for LAN-only, key-required remote desktop between every machine',
-			'Branch protection as code: a required PR gate on main enforced by a Terraform-managed GitHub ruleset'
+It started as an 18-step roadmap - Linux, Kubernetes, FastAPI, RAG, observability, GitOps, security, load and
+failure testing - and now runs apps used every day. Every phase is documented with what was built, the real
+bugs found along the way, and the evidence that each fix worked.`,
+		stats: [
+			{ value: '21.6% → 0%', label: 'LAN DNS failures after fixing a resolver loop' },
+			{ value: '~470 req/s', label: 'sustained under k6 load with 0% errors' },
+			{ value: '180s → 18s', label: 'worst case when the AI backend is down' },
+			{ value: '16 → 32', label: 'of 40 test questions answered by the top result' }
+		],
+		featureGroups: [
+			{
+				title: 'Platform',
+				items: [
+					'Two-node K3s cluster with GitOps via Argo CD; drift self-heals in ~11s',
+					'GitHub Actions builds images to GHCR and commits the tag; Argo CD deploys it',
+					'A required PR check on main, enforced by a Terraform-managed ruleset',
+					'SOPS + age encrypted secrets; HTTPS everywhere via Traefik and a local CA',
+					'Ansible for host configuration'
+				]
+			},
+			{
+				title: 'Backend & AI',
+				items: [
+					'FastAPI with rate limiting, retries, structured logs and Prometheus metrics',
+					'Postgres/pgvector + Redis data tier',
+					'RAG over a fully local Ollama LLM; no data leaves the network',
+					'Streaming chat assistant that searches and cites a 127 GB offline Wikipedia'
+				]
+			},
+			{
+				title: 'Apps',
+				items: [
+					'Mustard Cam: WebRTC webcam with invite-only passkey (WebAuthn) accounts, shared via Tailscale Funnel',
+					'iPhone calling bridge: the Pi as a Bluetooth hands-free unit, answered from the PC or touchscreen',
+					'Photo and file transfer between the iPhone and PC, reachable over Tailscale',
+					'Live touchscreen ops display: a service map and a pod "aquarium" driven by real metrics',
+					'Self-hosted RustDesk server for LAN-only remote desktop'
+				]
+			},
+			{
+				title: 'Reliability',
+				items: [
+					'Encrypted off-host backups with a restore rehearsal that boots K3s in a throwaway VM',
+					'Prometheus/Alertmanager email on stale or failed backups',
+					'k6 load tests and fault injection (pod kills, dependency outages, a stopped AI backend)',
+					'Findings cross-checked in Prometheus/Grafana, not just client-side output'
+				]
+			}
+		],
+		highlights: [
+			{
+				title: 'A firewall that never applied',
+				detail:
+					'Host firewall rules never touched Kubernetes traffic because of iptables chain ordering. Found with real blocked-vs-allowed traffic tests, then fixed and re-tested.'
+			},
+			{
+				title: 'A dead AI backend hung every request',
+				detail:
+					'Stopping Ollama on purpose left requests hanging for 180s+. Root-caused to the retry and timeout settings; it now fails cleanly in ~18s.'
+			},
+			{
+				title: 'A DNS loop failing 1 in 5 queries',
+				detail:
+					'"Some apps are slow on my phone" traced to a reverse-lookup cycle between AdGuard and CoreDNS. Authoritative private reverse zones took failures from 21.6% to 0%.'
+			},
+			{
+				title: 'Pod traffic stuck in the router',
+				detail:
+					"After each move of the worker, the WireGuard tunnel's one long-lived UDP flow got stuck in the router's flow cache. Flannel now routes pod traffic directly (host-gw)."
+			},
+			{
+				title: 'A dashboard reading 200x too high',
+				detail:
+					"AdGuard's rolling 24-hour totals looked like counter resets, so the DNS rate spiked to ~14,000/min every hour (really ~65). The exporter now keeps true counters."
+			},
+			{
+				title: 'Searching Wikipedia on one 8 GB GPU',
+				detail:
+					"Embedding millions of articles wasn't realistic, so retrieval uses the archive's own full-text index, scored against 40 labelled questions: obscure topics went from 8/15 to 15/15."
+			}
 		],
 		roadmap: [
 			'A native Windows exporter for the GPU host, which stopped being a Prometheus target when it left the cluster',
