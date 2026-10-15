@@ -125,7 +125,7 @@ base grounds every answer in real office info rather than letting the model impr
 		id: 'homelab',
 		title: 'Homelab Cloud + AI Platform',
 		description:
-			'A self-hosted cloud/AI platform across a Raspberry Pi 5 and an M1 MacBook: Kubernetes, GitOps, local LLM inference on a GPU host, a chat assistant grounded in offline Wikipedia, and full-cycle SRE practice.',
+			'A self-hosted cloud/AI platform across a Raspberry Pi 5 and an M1 MacBook: Kubernetes, GitOps, local LLM inference, a passkey-secured webcam, an iPhone calling bridge, and a live touchscreen ops display.',
 		imageUrl: '/homelab/dashboard.png',
 		// The dashboard's heading and metrics cards sit top-left; anchoring there keeps
 		// them visible on narrow screens, where the cover crops horizontally instead.
@@ -173,8 +173,25 @@ failing one LAN query in five, traced from "some apps are slow on my phone" to a
 a Bonjour flood. The second node itself was eventually migrated off WSL2 onto a bridged Linux VM, which
 retired an entire class of Windows-networking failures rather than working around another instance of one.
 
-A small in-cluster dashboard (FastAPI, pinned to the Pi) shows live node, pod, Argo CD, alert, and backup
-state, and can free the GPU on demand by evicting the resident Ollama model with a single API call.
+The Pi's touchscreen runs a live ops display: an architecture map whose dots move at each service's
+real request rate, and a coral-reef "aquarium" with one fish per pod - size is memory, speed is CPU, and a pod
+near its memory limit puffs up into a pufferfish before it gets OOM-killed. Every box and fish opens a debug
+page with that service's connections, pods, events and logs. Watching it surfaced its own bug: AdGuard's
+rolling 24-hour totals were read as counter resets, so the DNS rate spiked to ~14,000 queries a minute every
+hour when the real rate was ~65; the exporter now keeps true counters.
+
+Running it day to day turned up more networking lessons. Cross-node pod traffic died after every move of the
+worker because its WireGuard tunnel's one long-lived UDP flow got stuck in the router's flow cache, so Flannel
+now routes pod traffic directly (host-gw). CoreDNS runs one replica per node, so a worker outage can't take
+cluster DNS away from the Pi, and AdGuard queries its upstreams in parallel after logs showed ~7,800 lookups
+stalling 2-10s on a slow upstream over 27 days.
+
+Beyond the platform, it hosts real apps. Mustard Cam streams a webcam to invited viewers over WebRTC: the
+FastAPI app is the gate, not the pipe - it handles passkey (WebAuthn) sign-in and the WebRTC handshake, then
+the video flows straight from the camera host. A phone bridge turns the Pi into a Bluetooth hands-free unit
+for an iPhone, so calls can be answered from the PC or the Pi's touchscreen, and has grown into a small app
+for sending photos and files between the phone and the PC, reachable from anywhere over Tailscale.
+
 A streaming chat assistant at chat.home can search a 127GB offline Wikipedia archive and cite what it
 finds. Embedding millions of articles on one 8GB card was never realistic, so retrieval uses the full-text
 index the archive already ships with, and query handling is scored against 40 labelled questions before
@@ -192,7 +209,11 @@ agent fails.`,
 			'HTTPS on every service hostname through Traefik, using a local CA with a .home name constraint',
 			'Encrypted off-host backups with a scripted restore rehearsal that boots K3s from the snapshot in a throwaway VM, plus Prometheus/Alertmanager rules that email on stale or failed backups',
 			'Load tested with k6 (0% errors at ~476 req/s sustained) and failure tested with real fault injection (pod kills, dependency outages, a stopped AI backend) - findings cross-checked against Prometheus/Grafana, not just client-side output',
-			'A cluster status dashboard showing live Pi metrics, nodes, pods, Argo CD apps, alerts, and backup health, with a one-call GPU release for the inference host'
+			'A live touchscreen ops display on the Pi: an architecture map animated by real Prometheus request rates, a pod aquarium sized by live memory and CPU, and a debug page behind every service',
+			'Mustard Cam: a WebRTC webcam viewer with invite-only passkey (WebAuthn) accounts, hashed session tokens, per-address sign-in throttling, and a strict Content-Security-Policy, shared by link through Tailscale Funnel',
+			'iPhone calling bridge: the Pi as a Bluetooth hands-free unit (PipeWire, D-Bus, RNNoise noise filtering), answered from the PC or the touchscreen, plus photo and file transfer and 6-digit-code device sign-in over Tailscale',
+			'A self-hosted RustDesk server on the Pi for LAN-only, key-required remote desktop between every machine',
+			'Branch protection as code: a required PR gate on main enforced by a Terraform-managed GitHub ruleset'
 		],
 		roadmap: [
 			'A native Windows exporter for the GPU host, which stopped being a Prometheus target when it left the cluster',
@@ -219,7 +240,11 @@ agent fails.`,
 			'SOPS',
 			'Restic',
 			'k6',
-			'Docker'
+			'Docker',
+			'WebRTC',
+			'WebAuthn',
+			'Tailscale',
+			'PipeWire'
 		],
 		repoUrl: 'https://github.com/josephvelasquez48/homelab'
 		// caseStudyUrl: '/projects/homelab/report' — re-add when the report is ready to go public
